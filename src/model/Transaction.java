@@ -1,61 +1,34 @@
 package model;
 
+
 import java.util.ArrayList;
 
 public class Transaction {
-
     private String transactionId;
     private Customer customer;
     private String date;
-    private ArrayList<TransactionItem> itemList;
-    private double totalAmount;
+    private ArrayList<TransactionItem> items;
+    private boolean confirmed;
+    private boolean cancelled;
 
-    
-    public Transaction() {
-        itemList = new ArrayList<>();
-        totalAmount = 0;
-    }
-
-    public Transaction(String transactionId,
-                       Customer customer,
-                       String date) {
-
-        this.transactionId = transactionId;
+    public Transaction(String transactionId, Customer customer, String date) {
+        if (transactionId == null || transactionId.trim().isEmpty()) {
+            throw new IllegalArgumentException("Transaction ID cannot be empty.");
+        }
+        if (customer == null) {
+            throw new IllegalArgumentException("Customer not found.");
+        }
+        if (date == null || date.trim().isEmpty()) {
+            throw new IllegalArgumentException("Date cannot be empty.");
+        }
+        this.transactionId = transactionId.trim();
         this.customer = customer;
-        this.date = date;
-        this.itemList = new ArrayList<>();
-        this.totalAmount = 0;
+        this.date = date.trim();
+        this.items = new ArrayList<>();
+        this.confirmed = false;
+        this.cancelled = false;
     }
 
-    // Calculate total bill (BR6)
-    public void calculateTotal() {
-
-        totalAmount = 0;
-
-        for (TransactionItem item : itemList) {
-            totalAmount += item.getSubtotal();
-        }
-    }
-
-    // Add item into transaction
-    public void addItem(TransactionItem item) {
-
-        if (item != null) {
-            itemList.add(item);
-            calculateTotal();
-        }
-    }
-
-    // Remove item from transaction
-    public void removeItem(TransactionItem item) {
-
-        if (item != null) {
-            itemList.remove(item);
-            calculateTotal();
-        }
-    }
-
-    // Getters
     public String getTransactionId() {
         return transactionId;
     }
@@ -68,28 +41,119 @@ public class Transaction {
         return date;
     }
 
-    public ArrayList<TransactionItem> getItemList() {
-        return itemList;
+    public ArrayList<TransactionItem> getItems() {
+        return items;
     }
 
-    public double getTotalAmount() {
-        return totalAmount;
+    public boolean isConfirmed() {
+        return confirmed;
     }
 
-    // Setters
-    public void setCustomer(Customer customer) {
-        this.customer = customer;
+    public boolean isCancelled() {
+        return cancelled;
     }
 
-    public void setDate(String date) {
-        this.date = date;
+    public void addProduct(Product product, int quantity) {
+        checkCanEdit();
+        if (product == null) {
+            throw new IllegalArgumentException("Product not found.");
+        }
+        if (!product.hasEnoughStock(quantity)) {
+            throw new IllegalArgumentException("Not enough stock.");
+        }
+
+        TransactionItem oldItem = findItem(product.getProductId());
+        if (oldItem == null) {
+            items.add(new TransactionItem(product, quantity));
+        } else {
+            int newQuantity = oldItem.getQuantity() + quantity;
+            if (!product.hasEnoughStock(newQuantity)) {
+                throw new IllegalArgumentException("Not enough stock.");
+            }
+            oldItem.setQuantity(newQuantity);
+        }
     }
 
-    @Override
-    public String toString() {
+    public void updateQuantity(String productId, int newQuantity) {
+        checkCanEdit();
+        TransactionItem item = findItem(productId);
+        if (item == null) {
+            throw new IllegalArgumentException("Product is not in this transaction.");
+        }
+        if (!item.getProduct().hasEnoughStock(newQuantity)) {
+            throw new IllegalArgumentException("Not enough stock.");
+        }
+        item.setQuantity(newQuantity);
+    }
 
-        return "Transaction ID: " + transactionId
-                + ", Customer: " + customer.getCustomerName()
-                + ", Total Amount: " + totalAmount;
+    public void removeProduct(String productId) {
+        checkCanEdit();
+        TransactionItem item = findItem(productId);
+        if (item == null) {
+            throw new IllegalArgumentException("Product is not in this transaction.");
+        }
+        items.remove(item);
+    }
+
+    public double calculateTotal() {
+        double total = 0;
+        for (TransactionItem item : items) {
+            total += item.getLineTotal();
+        }
+        return total;
+    }
+
+    public void confirm() {
+        checkCanEdit();
+        if (items.isEmpty()) {
+            throw new IllegalStateException("Transaction must have at least one product.");
+        }
+        for (TransactionItem item : items) {
+            Product product = item.getProduct();
+            product.reduceStock(item.getQuantity());
+        }
+        confirmed = true;
+    }
+
+    public void cancel() {
+        checkCanEdit();
+        cancelled = true;
+    }
+
+    public TransactionItem findItem(String productId) {
+        for (TransactionItem item : items) {
+            if (item.getProduct().getProductId().equalsIgnoreCase(productId)) {
+                return item;
+            }
+        }
+        return null;
+    }
+
+    public String getStatus() {
+        if (cancelled) {
+            return "Cancelled";
+        }
+        if (confirmed) {
+            return "Confirmed";
+        }
+        return "Pending";
+    }
+
+    public void displayInfo() {
+        System.out.println("Transaction ID: " + transactionId);
+        System.out.println("Customer: " + customer.getName());
+        System.out.println("Date: " + date);
+        System.out.println("Status: " + getStatus());
+        System.out.printf("%-20s %5s %10s %12s%n", "Product", "Qty", "Price", "Line Total");
+        for (TransactionItem item : items) {
+            item.displayInfo();
+        }
+        System.out.printf("Total: %.0f%n", calculateTotal());
+    }
+
+    private void checkCanEdit() {
+        if (confirmed || cancelled) {
+            throw new IllegalStateException("Cannot edit confirmed or cancelled transaction.");
+        }
     }
 }
