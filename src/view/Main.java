@@ -236,7 +236,12 @@ public class Main {
 
     private static void addProductToTransaction() {
         Transaction transaction = getTransactionFromInput();
-        Product product = (Product) productManager.findById(readLine("Product ID: "));
+        String productId = readLine("Product ID: ");
+        Product product = (Product) productManager.findById(productId);
+        if (product == null) {
+           System.out.println("Error: Product ID."+ productId + " not found.");
+           return;                                                                                                                          
+        }
         int quantity = readInt("Quantity: ");
         transaction.addProduct(product, quantity);
         System.out.println("Product added to transaction.");
@@ -246,7 +251,7 @@ public class Main {
         Transaction transaction = getTransactionFromInput();
         String productId = readLine("Product ID: ");
         int quantity = readInt("New quantity: ");
-        String transactionId = null;
+        String transactionId = transsaction.getTransactionId();
         transactionManager.updateTransaction( transactionId, productId, quantity);
         System.out.println("Quantity updated.");
     }
@@ -296,5 +301,15 @@ public class Main {
         productManager.addProduct(new Product("P01", "Laptop", "Electronics", 15000000, 10));
         productManager.addProduct(new Product("P02", "Mouse", "Accessories", 200000, 30));
         customerManager.addCustomer(new Customer("C01", "Nguyen Van A", "0901234567", "HCM"));
+    }
+
+    private static class transsaction {
+
+        private static String getTransactionId() {
+            throw new UnsupportedOperationException("Not supported yet."); 
+        }
+
+        public transsaction() {
+        }
     }
 }

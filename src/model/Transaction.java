@@ -110,6 +110,12 @@ public class Transaction {
         }
         for (TransactionItem item : items) {
             Product product = item.getProduct();
+            if (!product.hasEnoughStock(item.getQuantity())) {
+                throw new IllegalArgumentException("Not enough stock for " + product.getProductName() + ".");
+            }
+        }
+        for (TransactionItem item : items) {
+            Product product = item.getProduct();
             product.reduceStock(item.getQuantity());
         }
         confirmed = true;
