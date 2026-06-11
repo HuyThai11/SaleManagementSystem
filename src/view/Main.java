@@ -8,15 +8,17 @@ import model.Customer;
 import model.Product;
 import model.Transaction;
 import manager.CustomerManager;
+import report.ReportService;
 
 public class Main {
     private static final Scanner scanner = new Scanner(System.in);
     private static final ProductManager productManager = new ProductManager();
     private static final CustomerManager customerManager = new CustomerManager();
     private static final TransactionManager transactionManager = new TransactionManager();
-
+    private static ReportService reportService;
     
     public static void main(String[] args) {
+        reportService = new ReportService(transactionManager.getTransactionList());
         addSampleData();
         int choice;
         do {
@@ -34,33 +36,7 @@ public class Main {
                         transactionMenu();
                         break;
                     case 4:
-                        System.out.println("========== REPORT ==========");
-                        System.out.println("Total Revenue: " + transactionManager.calculateRevenue());
-                        System.out.println();
-
-                        System.out.println("----------- BEST-SELLING PRODUCTS -----------");
-                        Map<Product, Integer> bestSelling = transactionManager.getBestSellingProducts();
-                        bestSelling.entrySet().stream()
-                                .sorted((a, b) -> b.getValue() - a.getValue())
-                                .forEach(entry -> System.out.printf("%-8s %-20s %d units sold%n",
-                                        entry.getKey().getProductId(),
-                                        entry.getKey().getProductName(),
-                                        entry.getValue()));
-                        System.out.println("----------------------------------------------");
-                        System.out.println();
-
-                        System.out.println("----------- TOP CUSTOMERS -----------");
-                        Map<Customer, Double> topCustomers = transactionManager.getTopCustomers();
-                        topCustomers.entrySet().stream()
-                                .sorted((a, b) -> Double.compare(b.getValue(), a.getValue()))
-                                .forEach(entry -> System.out.printf("%-8s %-20s %.0f VND%n",
-                                        entry.getKey().getId(),
-                                        entry.getKey().getName(),
-                                        entry.getValue()));
-                        System.out.println("--------------------------------------");
-                        System.out.println();
-
-                        transactionManager.displayHistory();
+                        reportMenu();
                         break;
                     case 5:
                         System.out.println("Goodbye.");
@@ -319,6 +295,52 @@ public class Main {
             } catch (NumberFormatException e) {
                 System.out.println("Please enter a number.");
             }
+        }
+    }
+    private static void reportMenu() {
+
+        System.out.println("===== REPORT MENU =====");
+        System.out.println("1. Daily Revenue");
+        System.out.println("2. Monthly Revenue");
+        System.out.println("3. Best Selling Products");
+        System.out.println("4. Top Customers");
+
+        int choice = readInt("Choose: ");
+
+        switch(choice){
+
+            case 1:
+                String date =
+                    readLine("Enter date (dd/MM/yyyy): ");
+
+                double dailyRevenue =
+                    reportService.generateDailyReport(date);
+
+                    System.out.printf( "Revenue: %,.0f VND%n", dailyRevenue);
+
+                break;
+
+            case 2:
+                int month =
+                    readInt("Month: ");
+
+                int year =
+                    readInt("Year: ");
+
+                double monthlyRevenue =
+                            reportService.generateMonthlyReport(month, year);
+
+                    System.out.printf("Revenue: %,.0f VND%n", monthlyRevenue);
+
+                break;
+
+            case 3:
+                reportService.getBestSellingProducts();
+                break;
+
+            case 4:
+                reportService.getTopCustomers();
+                break;
         }
     }
 

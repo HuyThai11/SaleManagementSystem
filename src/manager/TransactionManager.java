@@ -67,6 +67,9 @@ public class TransactionManager {
             quantity);
     }
     
+    public ArrayList<Transaction> getTransactionList() {
+        return transactions;
+    }
     public double calculateRevenue() {
 
         double revenue = 0;
