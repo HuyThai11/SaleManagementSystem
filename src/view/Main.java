@@ -1,5 +1,6 @@
 
 package view;
+import java.util.Map;
 import java.util.Scanner;
 import manager.ProductManager;
 import manager.TransactionManager;
@@ -34,14 +35,32 @@ public class Main {
                         break;
                     case 4:
                         System.out.println("========== REPORT ==========");
+                        System.out.println("Total Revenue: " + transactionManager.calculateRevenue());
+                        System.out.println();
 
-                        System.out.println(
-                                            "Total Revenue: "
-                                            + transactionManager.calculateRevenue());
+                        System.out.println("----------- BEST-SELLING PRODUCTS -----------");
+                        Map<Product, Integer> bestSelling = transactionManager.getBestSellingProducts();
+                        bestSelling.entrySet().stream()
+                                .sorted((a, b) -> b.getValue() - a.getValue())
+                                .forEach(entry -> System.out.printf("%-8s %-20s %d units sold%n",
+                                        entry.getKey().getProductId(),
+                                        entry.getKey().getProductName(),
+                                        entry.getValue()));
+                        System.out.println("----------------------------------------------");
+                        System.out.println();
 
-                                            System.out.println();
+                        System.out.println("----------- TOP CUSTOMERS -----------");
+                        Map<Customer, Double> topCustomers = transactionManager.getTopCustomers();
+                        topCustomers.entrySet().stream()
+                                .sorted((a, b) -> Double.compare(b.getValue(), a.getValue()))
+                                .forEach(entry -> System.out.printf("%-8s %-20s %.0f VND%n",
+                                        entry.getKey().getId(),
+                                        entry.getKey().getName(),
+                                        entry.getValue()));
+                        System.out.println("--------------------------------------");
+                        System.out.println();
 
-                                            transactionManager.displayHistory();
+                        transactionManager.displayHistory();
                         break;
                     case 5:
                         System.out.println("Goodbye.");
@@ -73,6 +92,7 @@ public class Main {
             System.out.println("2. Update product");
             System.out.println("3. Remove product");
             System.out.println("4. View all products");
+            System.out.println("5. Search products");
             System.out.println("0. Back");
             choice = readInt("Choose: ");
 
@@ -88,6 +108,11 @@ public class Main {
                     break;
                 case 4:
                     productManager.displayAll();
+                    break;
+                case 5:
+                    System.out.print("Enter Keyword: ");
+                    String keyword = scanner.nextLine();
+                    productManager.searchProduct(keyword);
                     break;
                 default:
                     break;
@@ -251,7 +276,7 @@ public class Main {
         Transaction transaction = getTransactionFromInput();
         String productId = readLine("Product ID: ");
         int quantity = readInt("New quantity: ");
-        String transactionId = transsaction.getTransactionId();
+        String transactionId = transaction.getTransactionId();
         transactionManager.updateTransaction( transactionId, productId, quantity);
         System.out.println("Quantity updated.");
     }
@@ -301,15 +326,5 @@ public class Main {
         productManager.addProduct(new Product("P01", "Laptop", "Electronics", 15000000, 10));
         productManager.addProduct(new Product("P02", "Mouse", "Accessories", 200000, 30));
         customerManager.addCustomer(new Customer("C01", "Nguyen Van A", "0901234567", "HCM"));
-    }
-
-    private static class transsaction {
-
-        private static String getTransactionId() {
-            throw new UnsupportedOperationException("Not supported yet."); 
-        }
-
-        public transsaction() {
-        }
     }
 }

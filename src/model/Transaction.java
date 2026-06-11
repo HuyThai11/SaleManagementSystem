@@ -4,12 +4,12 @@ package model;
 import java.util.ArrayList;
 
 public class Transaction {
-    private String transactionId;
-    private Customer customer;
-    private String date;
-    private ArrayList<TransactionItem> items;
-    private boolean confirmed;
-    private boolean cancelled;
+    private String transactionId;// id giao dịch (không trống)
+    private Customer customer;// khách hàng thực hiện giao dịch (không null)
+    private String date;// ngày giao dịch (không trống, định dạng "dd/MM/yyyy")
+    private ArrayList<TransactionItem> items;// danh sách sản phẩm trong giao dịch
+    private boolean confirmed;// xác nhận giao dịch??
+    private boolean cancelled;// hủy giao dịch??
 
     public Transaction(String transactionId, Customer customer, String date) {
         if (transactionId == null || transactionId.trim().isEmpty()) {

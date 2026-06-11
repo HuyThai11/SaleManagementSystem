@@ -1,8 +1,13 @@
 package manager;
 
-import java.util.ArrayList;
+
 import model.Customer;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import model.Product;
 import model.Transaction;
+import model.TransactionItem;
 
 public class TransactionManager {
     private final ArrayList<Transaction> transactions;
@@ -86,5 +91,33 @@ public class TransactionManager {
             transaction.displayInfo();
             System.out.println("----------------------------------------");
         }
+    }
+   
+    public Map<Product, Integer> getBestSellingProducts() {
+        Map<Product, Integer> result = new HashMap<>();
+        for (Transaction transaction : transactions) {
+            if (!transaction.isConfirmed()) {
+                continue;
+            }
+            for (TransactionItem item : transaction.getItems()) {
+                Product product = item.getProduct();
+                int current = result.getOrDefault(product, 0);
+                result.put(product, current + item.getQuantity());
+            }
+        }
+        return result;
+    }
+    
+    public Map<Customer, Double> getTopCustomers() {
+        Map<Customer, Double> result = new HashMap<>();
+        for (Transaction transaction : transactions) {
+            if (!transaction.isConfirmed()) {
+                continue;
+            }
+            Customer customer = transaction.getCustomer();
+            double current = result.getOrDefault(customer, 0.0);
+            result.put(customer, current + transaction.calculateTotal());
+        }
+        return result;
     }
 }
