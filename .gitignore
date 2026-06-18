@@ -1,0 +1,27 @@
+# Compiled class file
+*.class
+*.log
+
+# IDE and Project Files
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+out/
+bin/
+target/
+nbproject/private/
+
+# Build output
+build/
+dist/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

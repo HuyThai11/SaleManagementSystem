@@ -2,7 +2,7 @@
 package model;
 
 
-public class Person {
+public abstract class Person {
     private String id;
     private String name;
 
@@ -33,8 +33,6 @@ public class Person {
         this.name = name.trim();
     }
 
-    public void displayInfo() {
-        System.out.println(id + " - " + name);
-    }
+    public abstract void displayInfo();
 }
 

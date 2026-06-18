@@ -1,14 +1,20 @@
 
 package model;
 
+import java.util.ArrayList;
+
 public class Product {
     private String productId;
     private String productName;
     private String category;
     private double price;
     private int stockQuantity;
+    private boolean active;
+    private ArrayList<Double> priceHistory;
 
     public Product(String productId, String productName, String category, double price, int stockQuantity) {
+        this.active = true;
+        this.priceHistory = new ArrayList<>();
         setProductId(productId);
         setProductName(productName);
         setCategory(category);
@@ -57,6 +63,9 @@ public class Product {
         if (price <= 0) {
             throw new IllegalArgumentException("Price must be greater than zero.");
         }
+        if (this.price > 0 && this.price != price) {
+            this.priceHistory.add(this.price);
+        }
         this.price = price;
     }
 
@@ -80,6 +89,26 @@ public class Product {
             throw new IllegalArgumentException("Not enough stock for " + productName + ".");
         }
         stockQuantity -= quantity;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void activate() {
+        this.active = true;
+    }
+
+    public void deactivate() {
+        this.active = false;
+    }
+
+    public boolean isLowStock() {
+        return stockQuantity < 5;
+    }
+
+    public ArrayList<Double> getPriceHistory() {
+        return priceHistory;
     }
 
     public void displayInfo() {

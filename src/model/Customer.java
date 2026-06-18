@@ -4,7 +4,7 @@ package model;
 
 
 
-public final class Customer extends Person {
+public abstract class Customer extends Person {
     private String phone;
     private String address;
 
@@ -45,10 +45,17 @@ public final class Customer extends Person {
     public void setName(String name) {
     if (name == null || name.trim().isEmpty()) {
         throw new IllegalArgumentException(
-                "Customer name cannot be empty.");
+            "Customer name cannot be empty.");
     }
     super.setName(name);
     }
+
+    public abstract double calculateDiscount(double total);
+
+    public abstract String getCustomerType();
+
+    public abstract double getDiscountRate();
+
     @Override
     public void displayInfo() {
         System.out.printf("%-8s %-20s %-15s %-25s%n", getId(), getName(), phone, address);

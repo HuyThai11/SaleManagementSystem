@@ -8,6 +8,10 @@ import java.util.Map;
 import model.Product;
 import model.Transaction;
 import model.TransactionItem;
+import model.InStoreTransaction;
+import model.OnlineTransaction;
+import model.VIPCustomer;
+import model.VIPTier;
 
 public class TransactionManager {
     private final ArrayList<Transaction> transactions;
@@ -16,11 +20,38 @@ public class TransactionManager {
         transactions = new ArrayList<>();
     }
 
-    public Transaction createTransaction(String id, Customer customer, String date) {
+    public InStoreTransaction createInStoreTransaction(String id, Customer customer, String date) {
         if (findById(id) != null) {
             throw new IllegalArgumentException("Transaction ID already exists.");
         }
-        Transaction transaction = new Transaction(id, customer, date);
+        InStoreTransaction transaction = new InStoreTransaction(id, customer, date);
+        transactions.add(transaction);
+        return transaction;
+    }
+
+    public InStoreTransaction createInStoreTransactionWithDiscount(String id, Customer customer, String date, double discountRate, String approvedBy) {
+        if (findById(id) != null) {
+            throw new IllegalArgumentException("Transaction ID already exists.");
+        }
+        InStoreTransaction transaction = new InStoreTransaction(id, customer, date, discountRate, approvedBy);
+        transactions.add(transaction);
+        return transaction;
+    }
+
+    public OnlineTransaction createOnlineTransaction(String id, Customer customer, String date, String shippingAddress) {
+        if (findById(id) != null) {
+            throw new IllegalArgumentException("Transaction ID already exists.");
+        }
+        OnlineTransaction transaction = new OnlineTransaction(id, customer, date, shippingAddress);
+        transactions.add(transaction);
+        return transaction;
+    }
+
+    public OnlineTransaction createOnlineTransaction(String id, Customer customer, String date, String shippingAddress, double shippingFee) {
+        if (findById(id) != null) {
+            throw new IllegalArgumentException("Transaction ID already exists.");
+        }
+        OnlineTransaction transaction = new OnlineTransaction(id, customer, date, shippingAddress, shippingFee);
         transactions.add(transaction);
         return transaction;
     }
@@ -40,6 +71,14 @@ public class TransactionManager {
             throw new IllegalArgumentException("Transaction not found.");
         }
         transaction.confirm();
+
+        // Auto VIP tier update
+        Customer customer = transaction.getCustomer();
+        if (customer instanceof VIPCustomer) {
+            VIPCustomer vipCustomer = (VIPCustomer) customer;
+            int confirmedCount = countConfirmedTransactions(vipCustomer);
+            vipCustomer.updateTier(confirmedCount);
+        }
     }
 
     public void cancelTransaction(String id) {
@@ -70,19 +109,28 @@ public class TransactionManager {
     public ArrayList<Transaction> getTransactionList() {
         return transactions;
     }
+
     public double calculateRevenue() {
-
         double revenue = 0;
-
-        for(Transaction transaction : transactions){
-
-            if(transaction.isConfirmed()){
-
-                revenue += transaction.calculateTotal();
+        for (Transaction t : transactions) {
+            if (t.isConfirmed()) {
+                revenue += t.calculateTotal();
+            }
         }
+        return revenue;
     }
 
-    return revenue;
+    public int countConfirmedTransactions(Customer customer) {
+        if (customer == null) {
+            return 0;
+        }
+        int count = 0;
+        for (Transaction transaction : transactions) {
+            if (transaction.isConfirmed() && transaction.getCustomer().getId().equalsIgnoreCase(customer.getId())) {
+                count++;
+            }
+        }
+        return count;
     }
 
     public void displayHistory() {

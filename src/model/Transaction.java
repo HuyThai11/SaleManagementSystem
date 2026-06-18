@@ -3,7 +3,7 @@ package model;
 
 import java.util.ArrayList;
 
-public class Transaction {
+public abstract class Transaction {
     private String transactionId;// id giao dịch (không trống)
     private Customer customer;// khách hàng thực hiện giao dịch (không null)
     private String date;// ngày giao dịch (không trống, định dạng "dd/MM/yyyy")
@@ -95,13 +95,15 @@ public class Transaction {
         items.remove(item);
     }
 
-    public double calculateTotal() {
+    protected double calculateSubTotal() {
         double total = 0;
         for (TransactionItem item : items) {
             total += item.getLineTotal();
         }
         return total;
     }
+
+    public abstract double calculateTotal();
 
     public void confirm() {
         checkCanEdit();
@@ -110,6 +112,12 @@ public class Transaction {
         }
         for (TransactionItem item : items) {
             Product product = item.getProduct();
+            if (product == null) {
+                throw new IllegalStateException("Transaction contains an invalid null product.");
+            }
+            if (!product.isActive()) {
+                throw new IllegalStateException("Cannot confirm. Product " + product.getProductName() + " is inactive.");
+            }
             if (!product.hasEnoughStock(item.getQuantity())) {
                 throw new IllegalArgumentException("Not enough stock for " + product.getProductName() + ".");
             }
@@ -145,17 +153,7 @@ public class Transaction {
         return "Pending";
     }
 
-    public void displayInfo() {
-        System.out.println("Transaction ID: " + transactionId);
-        System.out.println("Customer: " + customer.getName());
-        System.out.println("Date: " + date);
-        System.out.println("Status: " + getStatus());
-        System.out.printf("%-20s %5s %10s %12s%n", "Product", "Qty", "Price", "Line Total");
-        for (TransactionItem item : items) {
-            item.displayInfo();
-        }
-        System.out.printf("Total: %.0f%n", calculateTotal());
-    }
+    public abstract void displayInfo();
 
     private void checkCanEdit() {
         if (confirmed || cancelled) {

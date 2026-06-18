@@ -10,10 +10,11 @@ public class ProductManager {
     public ProductManager() {
         products = new ArrayList<>();
     }
-// add product
     public void addProduct(Product product) {
-        if (findById(product.getProductId()) != null) {
-            throw new IllegalArgumentException("Product ID already exists.");
+        for (Product existingProduct : products) {
+            if (existingProduct.getProductId().equalsIgnoreCase(product.getProductId()) && existingProduct.isActive()) {
+                throw new IllegalArgumentException("Product ID already exists and is active.");
+            }
         }
         products.add(product);
     }
@@ -66,10 +67,10 @@ public class ProductManager {
 
     public boolean removeProduct(String id) {
         Product product = findById(id);
-        if (product == null) {
+        if (product == null || !product.isActive()) {
             return false;
         }
-        products.remove(product);
+        product.deactivate();
         return true;
     }
 
@@ -89,6 +90,36 @@ public class ProductManager {
         product.setStockQuantity(newStock);
     }
 
+    public ArrayList<Product> getActiveProducts() {
+        ArrayList<Product> activeProducts = new ArrayList<>();
+        for (Product product : products) {
+            if (product.isActive()) {
+                activeProducts.add(product);
+            }
+        }
+        return activeProducts;
+    }
+
+    public ArrayList<Product> getInactiveProducts() {
+        ArrayList<Product> inactiveProducts = new ArrayList<>();
+        for (Product product : products) {
+            if (!product.isActive()) {
+                inactiveProducts.add(product);
+            }
+        }
+        return inactiveProducts;
+    }
+
+    public ArrayList<Product> getLowStockProducts() {
+        ArrayList<Product> lowStockProducts = new ArrayList<>();
+        for (Product product : products) {
+            if (product.isActive() && product.isLowStock()) {
+                lowStockProducts.add(product);
+            }
+        }
+        return lowStockProducts;
+    }
+
    
     public void displayAll() {
         System.out.printf("%-8s %-20s %-15s %10s %8s%n", "ID", "Name", "Category", "Price", "Stock");
@@ -97,5 +128,7 @@ public class ProductManager {
         }
     }
 
-   
+    public ArrayList<Product> getAllProducts() {
+        return products;
+    }
 }

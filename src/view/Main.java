@@ -5,10 +5,13 @@ import java.util.Scanner;
 import manager.ProductManager;
 import manager.TransactionManager;
 import model.Customer;
+import model.RegularCustomer;
 import model.Product;
 import model.Transaction;
 import manager.CustomerManager;
 import report.ReportService;
+import model.InStoreTransaction;
+import model.OnlineTransaction;
 
 public class Main {
     private static final Scanner scanner = new Scanner(System.in);
@@ -18,7 +21,7 @@ public class Main {
     private static ReportService reportService;
     
     public static void main(String[] args) {
-        reportService = new ReportService(transactionManager.getTransactionList());
+        reportService = new ReportService(customerManager, productManager, transactionManager);
         addSampleData();
         int choice;
         do {
@@ -130,38 +133,42 @@ public class Main {
         int choice;
         do {
             System.out.println("----- Transaction Menu -----");
-            System.out.println("1. Create transaction");
-            System.out.println("2. Add product to transaction");
-            System.out.println("3. Update product quantity");
-            System.out.println("4. Remove product from transaction");
-            System.out.println("5. Confirm transaction");
-            System.out.println("6. Cancel transaction");
-            System.out.println("7. View transaction history");
+            System.out.println("1. Create In-Store Transaction");
+            System.out.println("2. Create Online Transaction");
+            System.out.println("3. Add product to transaction");
+            System.out.println("4. Update product quantity");
+            System.out.println("5. Remove product from transaction");
+            System.out.println("6. Confirm transaction");
+            System.out.println("7. Cancel transaction");
+            System.out.println("8. View transaction history");
             System.out.println("0. Back");
             choice = readInt("Choose: ");
 
             switch (choice) {
                 case 1:
-                    createTransaction();
+                    createInStoreTransaction();
                     break;
                 case 2:
-                    addProductToTransaction();
+                    createOnlineTransaction();
                     break;
                 case 3:
-                    updateTransactionQuantity();
+                    addProductToTransaction();
                     break;
                 case 4:
-                    removeProductFromTransaction();
+                    updateTransactionQuantity();
                     break;
                 case 5:
+                    removeProductFromTransaction();
+                    break;
+                case 6:
                     transactionManager.confirmTransaction(readLine("Transaction ID: "));
                     System.out.println("Transaction confirmed.");
                     break;
-                case 6:
+                case 7:
                     transactionManager.cancelTransaction(readLine("Transaction ID: "));
                     System.out.println("Transaction cancelled.");
                     break;
-                case 7:
+                case 8:
                     transactionManager.displayHistory();
                     break;
                 default:
@@ -204,7 +211,7 @@ public class Main {
         String name = readLine("Customer name: ");
         String phone = readLine("Phone: ");
         String address = readLine("Address: ");
-        customerManager.addCustomer(new Customer(id, name, phone, address));
+        customerManager.addCustomer(new RegularCustomer(id, name, phone, address));
         System.out.println("Customer added.");
     }
 
@@ -226,13 +233,44 @@ public class Main {
         }
     }
 
-    private static void createTransaction() {
+    private static void createInStoreTransaction() {
         String id = readLine("Transaction ID: ");
         String customerId = readLine("Customer ID: ");
         Customer customer = customerManager.findById(customerId);
+        if (customer == null) {
+            throw new IllegalArgumentException("Customer not found.");
+        }
         String date = readLine("Date: ");
-        transactionManager.createTransaction(id, customer, date);
-        System.out.println("Transaction created. Add product before confirm.");
+        
+        String hasDiscount = readLine("Apply discount? (y/n): ");
+        if (hasDiscount.equalsIgnoreCase("y")) {
+            double discountRate = readDouble("Discount rate (e.g. 0.1 for 10%): ");
+            String approvedBy = readLine("Approved by: ");
+            transactionManager.createInStoreTransactionWithDiscount(id, customer, date, discountRate, approvedBy);
+        } else {
+            transactionManager.createInStoreTransaction(id, customer, date);
+        }
+        System.out.println("In-Store Transaction created. Add product before confirm.");
+    }
+
+    private static void createOnlineTransaction() {
+        String id = readLine("Transaction ID: ");
+        String customerId = readLine("Customer ID: ");
+        Customer customer = customerManager.findById(customerId);
+        if (customer == null) {
+            throw new IllegalArgumentException("Customer not found.");
+        }
+        String date = readLine("Date: ");
+        String shippingAddress = readLine("Shipping Address: ");
+        
+        String useCustomFee = readLine("Use custom shipping fee? (y/n): ");
+        if (useCustomFee.equalsIgnoreCase("y")) {
+            double shippingFee = readDouble("Shipping Fee: ");
+            transactionManager.createOnlineTransaction(id, customer, date, shippingAddress, shippingFee);
+        } else {
+            transactionManager.createOnlineTransaction(id, customer, date, shippingAddress);
+        }
+        System.out.println("Online Transaction created. Add product before confirm.");
     }
 
     private static void addProductToTransaction() {
@@ -304,6 +342,15 @@ public class Main {
         System.out.println("2. Monthly Revenue");
         System.out.println("3. Best Selling Products");
         System.out.println("4. Top Customers");
+        System.out.println("5. VIP Customer List");
+        System.out.println("6. Revenue After Discount");
+        System.out.println("7. VIP Tier Distribution");
+        System.out.println("8. Revenue by Customer Type");
+        System.out.println("9. Total Discount Given");
+        System.out.println("10. Low Stock Products");
+        System.out.println("11. Active Products");
+        System.out.println("12. Inactive Products");
+        System.out.println("13. Product Price History");
 
         int choice = readInt("Choose: ");
 
@@ -341,12 +388,48 @@ public class Main {
             case 4:
                 reportService.getTopCustomers();
                 break;
+
+            case 5:
+                reportService.printVIPCustomerList();
+                break;
+
+            case 6:
+                reportService.printRevenueAfterDiscount();
+                break;
+
+            case 7:
+                reportService.printVIPTierDistribution();
+                break;
+
+            case 8:
+                reportService.printRevenueByCustomerType();
+                break;
+
+            case 9:
+                reportService.printTotalDiscountGiven();
+                break;
+
+            case 10:
+                reportService.printLowStockProducts();
+                break;
+
+            case 11:
+                reportService.printActiveProducts();
+                break;
+
+            case 12:
+                reportService.printInactiveProducts();
+                break;
+
+            case 13:
+                reportService.printProductPriceHistory();
+                break;
         }
     }
 
     private static void addSampleData() {
         productManager.addProduct(new Product("P01", "Laptop", "Electronics", 15000000, 10));
         productManager.addProduct(new Product("P02", "Mouse", "Accessories", 200000, 30));
-        customerManager.addCustomer(new Customer("C01", "Nguyen Van A", "0901234567", "HCM"));
+        customerManager.addCustomer(new RegularCustomer("C01", "Nguyen Van A", "0901234567", "HCM"));
     }
 }
