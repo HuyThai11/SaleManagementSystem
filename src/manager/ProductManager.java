@@ -10,6 +10,11 @@ public class ProductManager {
     public ProductManager() {
         products = new ArrayList<>();
     }
+
+    public void setProducts(java.util.List<Product> newProducts) {
+        this.products.clear();
+        this.products.addAll(newProducts);
+    }
     public void addProduct(Product product) {
         for (Product existingProduct : products) {
             if (existingProduct.getProductId().equalsIgnoreCase(product.getProductId()) && existingProduct.isActive()) {

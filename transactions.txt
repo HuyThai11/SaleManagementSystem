@@ -1,0 +1,1 @@
+#transactionId|transactionType|customerId|date|confirmed|cancelled|discountRate|approvedBy|shippingAddress|shippingFee

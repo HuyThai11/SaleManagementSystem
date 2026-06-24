@@ -12,6 +12,11 @@ public class CustomerManager {
         customers = new ArrayList<>();
     }
 
+    public void setCustomers(java.util.List<Customer> newCustomers) {
+        this.customers.clear();
+        this.customers.addAll(newCustomers);
+    }
+
     public void addCustomer(Customer customer) {
         if (findById(customer.getId()) != null) {
             throw new IllegalArgumentException("Customer ID already exists.");

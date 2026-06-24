@@ -11,13 +11,17 @@ import model.TransactionItem;
 import model.InStoreTransaction;
 import model.OnlineTransaction;
 import model.VIPCustomer;
-import model.VIPTier;
 
 public class TransactionManager {
     private final ArrayList<Transaction> transactions;
 
     public TransactionManager() {
         transactions = new ArrayList<>();
+    }
+
+    public void setTransactions(java.util.List<Transaction> newTransactions) {
+        this.transactions.clear();
+        this.transactions.addAll(newTransactions);
     }
 
     public InStoreTransaction createInStoreTransaction(String id, Customer customer, String date) {

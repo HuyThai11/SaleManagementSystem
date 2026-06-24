@@ -2,15 +2,6 @@
 <project-private xmlns="http://www.netbeans.org/ns/project-private/1">
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
-        <group>
-            <file>file:/C:/Users/huynh/Downloads/PRO192/SaleManagementSystem/src/model/Customer.java</file>
-            <file>file:/C:/Users/huynh/Downloads/PRO192/SaleManagementSystem/src/manager/TransactionManager.java</file>
-            <file>file:/C:/Users/huynh/Downloads/PRO192/SaleManagementSystem/src/manager/CustomerManager.java</file>
-            <file>file:/C:/Users/huynh/Downloads/PRO192/SaleManagementSystem/src/model/TransactionItem.java</file>
-            <file>file:/C:/Users/huynh/Downloads/PRO192/SaleManagementSystem/src/report/ReportService.java</file>
-            <file>file:/C:/Users/huynh/Downloads/PRO192/SaleManagementSystem/src/model/Transaction.java</file>
-            <file>file:/C:/Users/huynh/Downloads/PRO192/SaleManagementSystem/src/model/Person.java</file>
-            <file>file:/C:/Users/huynh/Downloads/PRO192/SaleManagementSystem/src/view/Main.java</file>
-        </group>
+        <group/>
     </open-files>
 </project-private>

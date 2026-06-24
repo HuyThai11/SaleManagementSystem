@@ -16,7 +16,6 @@ public class ReportService {
     private ArrayList<Transaction> transactionList;
     private manager.CustomerManager customerManager;
     private manager.ProductManager productManager;
-    private manager.TransactionManager transactionManager;
 
     public ReportService(ArrayList<Transaction> transactionList) {
         this.transactionList = transactionList;
@@ -25,7 +24,6 @@ public class ReportService {
     public ReportService(manager.CustomerManager customerManager, manager.ProductManager productManager, manager.TransactionManager transactionManager) {
         this.customerManager = customerManager;
         this.productManager = productManager;
-        this.transactionManager = transactionManager;
         this.transactionList = transactionManager.getTransactionList();
     }
 

@@ -1,0 +1,1 @@
+#customerType|customerId|name|phone|address|tier
