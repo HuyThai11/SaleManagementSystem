@@ -7,11 +7,13 @@ package model;
 public abstract class Customer extends Person {
     private String phone;
     private String address;
+    private boolean active;
 
     public Customer(String id, String name, String phone, String address) {
         super(id, name);
         setPhone(phone);
         setAddress(address);
+        this.active = true;
     }
 
     public String getPhone() {
@@ -55,6 +57,18 @@ public abstract class Customer extends Person {
     public abstract String getCustomerType();
 
     public abstract double getDiscountRate();
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void deactivate() {
+        this.active = false;
+    }
+
+    public void activate() {
+        this.active = true;
+    }
 
     @Override
     public void displayInfo() {

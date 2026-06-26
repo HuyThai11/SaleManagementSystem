@@ -1,14 +1,16 @@
-
 package report;
 
 import model.Customer;
 import model.Product;
 import model.Transaction;
 import model.TransactionItem;
+import model.VIPCustomer;
+import model.VIPTier;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ReportService {
@@ -54,8 +56,7 @@ public class ReportService {
         return revenue;
     }
 
-    // Best Selling Products — BR10
-    public void getBestSellingProducts() {
+    public List<Map.Entry<String, Integer>> getBestSellingProducts() {
         HashMap<String, Integer> productSales = new HashMap<>();
 
         for (Transaction t : transactionList) {
@@ -68,15 +69,10 @@ public class ReportService {
 
         ArrayList<Map.Entry<String, Integer>> ranking = new ArrayList<>(productSales.entrySet());
         ranking.sort((a, b) -> Integer.compare(b.getValue(), a.getValue()));
-
-        System.out.println("\n=== BEST SELLING PRODUCTS ===");
-        for (Map.Entry<String, Integer> entry : ranking) {
-            System.out.println(entry.getKey() + " - Qty Sold: " + entry.getValue());
-        }
+        return ranking;
     }
 
-    // Top Customers — BR11
-    public void getTopCustomers() {
+    public List<Map.Entry<Customer, Double>> getTopCustomers() {
         HashMap<Customer, Double> customerSpending = new HashMap<>();
 
         for (Transaction t : transactionList) {
@@ -87,178 +83,71 @@ public class ReportService {
 
         ArrayList<Map.Entry<Customer, Double>> ranking = new ArrayList<>(customerSpending.entrySet());
         ranking.sort(Comparator.comparing(Map.Entry<Customer, Double>::getValue).reversed());
-
-        System.out.println("\n=== TOP CUSTOMERS ===");
-        for (Map.Entry<Customer, Double> entry : ranking) {
-            System.out.printf("%s - Total Purchase: %.0f%n",
-                    entry.getKey().getName(), entry.getValue());
-        }
+        return ranking;
     }
 
-    // R1: VIP Customer List
-    public void printVIPCustomerList() {
-        if (customerManager == null) {
-            System.out.println("Error: CustomerManager is not initialized.");
-            return;
-        }
-        System.out.println("\n=== VIP CUSTOMER LIST ===");
-        System.out.printf("%-8s %-20s %-15s %-15s %-10s%n", "ID", "Name", "Phone", "Tier", "Discount%");
+    public List<VIPCustomer> getVIPCustomerList() {
+        List<VIPCustomer> vips = new ArrayList<>();
+        if (customerManager == null) return vips;
+        
         for (Customer c : customerManager.getAllCustomers()) {
-            if (c instanceof model.VIPCustomer) {
-                model.VIPCustomer vip = (model.VIPCustomer) c;
-                System.out.printf("%-8s %-20s %-15s %-15s %.0f%%%n",
-                        vip.getId(), vip.getName(), vip.getPhone(),
-                        vip.getTier().name(), vip.getDiscountRate() * 100);
+            if (c instanceof VIPCustomer) {
+                vips.add((VIPCustomer) c);
             }
         }
+        return vips;
     }
 
-    // R2: Revenue After Discount
-    public void printRevenueAfterDiscount() {
-        System.out.println("\n=== REVENUE AFTER DISCOUNT ===");
-        System.out.printf("%-15s %-20s %-15s%n", "Transaction ID", "Customer", "Final Total");
-        double totalRevenue = 0;
+    public Map<Transaction, Double> getRevenueAfterDiscount() {
+        Map<Transaction, Double> result = new HashMap<>();
         for (Transaction t : transactionList) {
             if (t.isConfirmed()) {
-                double total = t.calculateTotal(); // Polymorphism
-                System.out.printf("%-15s %-20s %.0f%n", t.getTransactionId(), t.getCustomer().getName(), total);
-                totalRevenue += total;
+                result.put(t, t.calculateTotal());
             }
         }
-        System.out.println("--------------------------------------------------");
-        System.out.printf("Total Revenue: %.0f%n", totalRevenue);
+        return result;
     }
 
-    // R10: VIP Tier Distribution
-    public void printVIPTierDistribution() {
-        if (customerManager == null) {
-            System.out.println("Error: CustomerManager is not initialized.");
-            return;
-        }
+    public Map<VIPTier, Integer> getVIPTierDistribution() {
+        Map<VIPTier, Integer> distribution = new HashMap<>();
+        distribution.put(VIPTier.SILVER, 0);
+        distribution.put(VIPTier.GOLD, 0);
+        distribution.put(VIPTier.PLATINUM, 0);
         
-        int silverCount = 0;
-        int goldCount = 0;
-        int platinumCount = 0;
+        if (customerManager == null) return distribution;
         
         for (Customer c : customerManager.getAllCustomers()) {
-            if (c instanceof model.VIPCustomer) {
-                model.VIPCustomer vip = (model.VIPCustomer) c;
+            if (c instanceof VIPCustomer) {
+                VIPCustomer vip = (VIPCustomer) c;
                 if (vip.getTier() != null) {
-                    switch (vip.getTier()) {
-                        case SILVER: silverCount++; break;
-                        case GOLD: goldCount++; break;
-                        case PLATINUM: platinumCount++; break;
-                    }
+                    distribution.put(vip.getTier(), distribution.get(vip.getTier()) + 1);
                 }
             }
         }
-        
-        System.out.println("\n=== VIP TIER DISTRIBUTION ===");
-        System.out.printf("%-10s %5s%n", "Tier", "Count");
-        System.out.printf("%-10s %5d%n", "PLATINUM", platinumCount);
-        System.out.printf("%-10s %5d%n", "GOLD", goldCount);
-        System.out.printf("%-10s %5d%n", "SILVER", silverCount);
+        return distribution;
     }
 
-    // R5: Low Stock Products
-    public void printLowStockProducts() {
-        if (productManager == null) {
-            System.out.println("Error: ProductManager is not initialized.");
-            return;
-        }
-
-        ArrayList<Product> lowStock = productManager.getLowStockProducts();
-        System.out.println("\n=== LOW STOCK PRODUCTS ===");
-        
-        if (lowStock.isEmpty()) {
-            System.out.println("No low stock products found.");
-            return;
-        }
-
-        System.out.printf("%-8s %-20s %-8s %-10s%n", "ID", "Name", "Stock", "Status");
-        for (Product p : lowStock) {
-            String status = p.isActive() ? "Active" : "Inactive";
-            System.out.printf("%-8s %-20s %-8d %-10s%n", p.getProductId(), p.getProductName(), p.getStockQuantity(), status);
-        }
+    public ArrayList<Product> getLowStockProducts() {
+        if (productManager == null) return new ArrayList<>();
+        return productManager.getLowStockProducts();
     }
 
-    // R6: Active Products
-    public void printActiveProducts() {
-        if (productManager == null) {
-            System.out.println("Error: ProductManager is not initialized.");
-            return;
-        }
-
-        ArrayList<Product> activeProducts = productManager.getActiveProducts();
-        System.out.println("\n=== ACTIVE PRODUCTS ===");
-        
-        if (activeProducts.isEmpty()) {
-            System.out.println("No active products found.");
-            return;
-        }
-
-        System.out.printf("%-8s %-20s %-15s %10s %8s%n", "ID", "Name", "Category", "Price", "Stock");
-        for (Product p : activeProducts) {
-            p.displayInfo();
-        }
+    public ArrayList<Product> getActiveProducts() {
+        if (productManager == null) return new ArrayList<>();
+        return productManager.getActiveProducts();
     }
 
-    // R7: Inactive Products
-    public void printInactiveProducts() {
-        if (productManager == null) {
-            System.out.println("Error: ProductManager is not initialized.");
-            return;
-        }
-
-        ArrayList<Product> inactiveProducts = productManager.getInactiveProducts();
-        System.out.println("\n=== INACTIVE PRODUCTS ===");
-        
-        if (inactiveProducts.isEmpty()) {
-            System.out.println("No inactive products found.");
-            return;
-        }
-
-        System.out.printf("%-8s %-20s %-15s %10s%n", "ID", "Name", "Category", "Last Price");
-        for (Product p : inactiveProducts) {
-            System.out.printf("%-8s %-20s %-15s %10.0f%n", p.getProductId(), p.getProductName(), p.getCategory(), p.getPrice());
-        }
+    public ArrayList<Product> getInactiveProducts() {
+        if (productManager == null) return new ArrayList<>();
+        return productManager.getInactiveProducts();
     }
 
-    // R8: Product Price History
-    public void printProductPriceHistory() {
-        if (productManager == null) {
-            System.out.println("Error: ProductManager is not initialized.");
-            return;
-        }
-
-        ArrayList<Product> allProducts = productManager.getAllProducts();
-        System.out.println("\n=== PRODUCT PRICE HISTORY ===");
-        
-        if (allProducts.isEmpty()) {
-            System.out.println("No products found.");
-            return;
-        }
-
-        for (Product p : allProducts) {
-            System.out.println("Product ID: " + p.getProductId());
-            System.out.println("Product Name: " + p.getProductName());
-            System.out.printf("Current Price: %.0f%n", p.getPrice());
-            
-            ArrayList<Double> history = p.getPriceHistory();
-            System.out.println("Historical Prices:");
-            if (history == null || history.isEmpty()) {
-                System.out.println("No price changes recorded");
-            } else {
-                for (int i = 0; i < history.size(); i++) {
-                    System.out.printf("%d. %.0f%n", i + 1, history.get(i));
-                }
-            }
-            System.out.println("-------------------------");
-        }
+    public ArrayList<Product> getProductPriceHistory() {
+        if (productManager == null) return new ArrayList<>();
+        return productManager.getAllProducts();
     }
 
-    // R3: Revenue by Customer Type
-    public void printRevenueByCustomerType() {
+    public double[] getRevenueByCustomerType() {
         java.util.HashSet<Customer> regularCustomers = new java.util.HashSet<>();
         java.util.HashSet<Customer> vipCustomers = new java.util.HashSet<>();
         
@@ -267,10 +156,10 @@ public class ReportService {
 
         for (Transaction t : transactionList) {
             if (t.isConfirmed()) {
-                double total = t.calculateTotal(); // Calculate once
+                double total = t.calculateTotal();
                 Customer customer = t.getCustomer();
                 
-                if (customer instanceof model.VIPCustomer) {
+                if (customer instanceof VIPCustomer) {
                     vipCustomers.add(customer);
                     vipRevenue += total;
                 } else {
@@ -279,41 +168,20 @@ public class ReportService {
                 }
             }
         }
-
-        double totalRevenue = regularRevenue + vipRevenue;
         
-        System.out.println("\n=== REVENUE BY CUSTOMER TYPE ===");
-        if (totalRevenue == 0) {
-            System.out.println("No confirmed revenue recorded.");
-            return;
-        }
-
-        double regularPct = (regularRevenue / totalRevenue) * 100;
-        double vipPct = (vipRevenue / totalRevenue) * 100;
-
-        System.out.println("--- Regular Customers ---");
-        System.out.printf("Count (unique buyers): %d%n", regularCustomers.size());
-        System.out.printf("Revenue: %.0f%n", regularRevenue);
-        System.out.printf("Percentage: %.2f%%%n", regularPct);
-
-        System.out.println("--- VIP Customers ---");
-        System.out.printf("Count (unique buyers): %d%n", vipCustomers.size());
-        System.out.printf("Revenue: %.0f%n", vipRevenue);
-        System.out.printf("Percentage: %.2f%%%n", vipPct);
-        
-        System.out.println("-------------------------");
-        System.out.printf("Total Revenue: %.0f%n", totalRevenue);
+        return new double[] {
+            regularCustomers.size(), regularRevenue,
+            vipCustomers.size(), vipRevenue
+        };
     }
 
-    // R4: Total Discount Given
-    public void printTotalDiscountGiven() {
+    public double[] getTotalDiscountGiven() {
         double totalSubtotal = 0;
         double totalDiscountAmount = 0;
         double totalNetRevenue = 0;
 
         for (Transaction t : transactionList) {
             if (t.isConfirmed() && t instanceof model.InStoreTransaction) {
-                // Cast only when necessary to access specific specialized properties
                 model.InStoreTransaction ist = (model.InStoreTransaction) t;
                 
                 double subtotal = 0;
@@ -321,9 +189,7 @@ public class ReportService {
                     subtotal += item.getLineTotal();
                 }
                 
-                // Polymorphic net revenue calculation
                 double netRevenue = ist.calculateTotal();
-                
                 double discountRate = ist.getDiscountRate();
                 double discountAmount = subtotal * discountRate;
                 
@@ -333,10 +199,7 @@ public class ReportService {
             }
         }
         
-        System.out.println("\n=== TOTAL DISCOUNT GIVEN (IN-STORE) ===");
-        System.out.printf("Total Subtotal: %.0f%n", totalSubtotal);
-        System.out.printf("Total Discount Amount: %.0f%n", totalDiscountAmount);
-        System.out.printf("Total Net Revenue: %.0f%n", totalNetRevenue);
+        return new double[] {totalSubtotal, totalDiscountAmount, totalNetRevenue};
     }
 }
 

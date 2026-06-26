@@ -2,6 +2,10 @@ package model;
 
 
 import java.util.ArrayList;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
 
 public abstract class Transaction {
     private String transactionId;// id giao dịch (không trống)
@@ -21,6 +25,15 @@ public abstract class Transaction {
         if (date == null || date.trim().isEmpty()) {
             throw new IllegalArgumentException("Date cannot be empty.");
         }
+        
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/uuuu")
+                .withResolverStyle(ResolverStyle.STRICT);
+            LocalDate.parse(date.trim(), formatter);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Invalid date format. Expected dd/MM/yyyy.");
+        }
+        
         this.transactionId = transactionId.trim();
         this.customer = customer;
         this.date = date.trim();
@@ -58,18 +71,16 @@ public abstract class Transaction {
         if (product == null) {
             throw new IllegalArgumentException("Product not found.");
         }
-        if (!product.hasEnoughStock(quantity)) {
-            throw new IllegalArgumentException("Not enough stock.");
+        if (!product.isActive()) {
+            throw new IllegalArgumentException("Cannot add inactive product to transaction.");
         }
+        product.reserveStock(quantity);
 
         TransactionItem oldItem = findItem(product.getProductId());
         if (oldItem == null) {
             items.add(new TransactionItem(product, quantity));
         } else {
             int newQuantity = oldItem.getQuantity() + quantity;
-            if (!product.hasEnoughStock(newQuantity)) {
-                throw new IllegalArgumentException("Not enough stock.");
-            }
             oldItem.setQuantity(newQuantity);
         }
     }
@@ -80,9 +91,14 @@ public abstract class Transaction {
         if (item == null) {
             throw new IllegalArgumentException("Product is not in this transaction.");
         }
-        if (!item.getProduct().hasEnoughStock(newQuantity)) {
-            throw new IllegalArgumentException("Not enough stock.");
+        
+        int diff = newQuantity - item.getQuantity();
+        if (diff > 0) {
+            item.getProduct().reserveStock(diff);
+        } else if (diff < 0) {
+            item.getProduct().releaseStock(-diff);
         }
+        
         item.setQuantity(newQuantity);
     }
 
@@ -92,6 +108,7 @@ public abstract class Transaction {
         if (item == null) {
             throw new IllegalArgumentException("Product is not in this transaction.");
         }
+        item.getProduct().releaseStock(item.getQuantity());
         items.remove(item);
     }
 
@@ -118,9 +135,6 @@ public abstract class Transaction {
             if (!product.isActive()) {
                 throw new IllegalStateException("Cannot confirm. Product " + product.getProductName() + " is inactive.");
             }
-            if (!product.hasEnoughStock(item.getQuantity())) {
-                throw new IllegalArgumentException("Not enough stock for " + product.getProductName() + ".");
-            }
         }
         for (TransactionItem item : items) {
             Product product = item.getProduct();
@@ -131,6 +145,9 @@ public abstract class Transaction {
 
     public void cancel() {
         checkCanEdit();
+        for (TransactionItem item : items) {
+            item.getProduct().releaseStock(item.getQuantity());
+        }
         cancelled = true;
     }
 

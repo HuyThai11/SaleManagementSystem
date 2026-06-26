@@ -9,6 +9,7 @@ public class Product {
     private String category;
     private double price;
     private int stockQuantity;
+    private int reservedStock = 0;
     private boolean active;
     private ArrayList<Double> priceHistory;
 
@@ -81,14 +82,34 @@ public class Product {
     }
 
     public boolean hasEnoughStock(int quantity) {
-        return quantity > 0 && stockQuantity >= quantity;
+        return quantity > 0 && (stockQuantity - reservedStock) >= quantity;
+    }
+
+    public void reserveStock(int quantity) {
+        if (!hasEnoughStock(quantity)) {
+            throw new IllegalArgumentException("Not enough available stock.");
+        }
+        this.reservedStock += quantity;
+    }
+
+    public void releaseStock(int quantity) {
+        if (this.reservedStock < quantity) {
+            this.reservedStock = 0;
+        } else {
+            this.reservedStock -= quantity;
+        }
+    }
+
+    public int getReservedStock() {
+        return reservedStock;
     }
 
     public void reduceStock(int quantity) {
-        if (!hasEnoughStock(quantity)) {
+        if (stockQuantity < quantity) {
             throw new IllegalArgumentException("Not enough stock for " + productName + ".");
         }
         stockQuantity -= quantity;
+        releaseStock(quantity);
     }
 
     public boolean isActive() {
@@ -109,6 +130,12 @@ public class Product {
 
     public ArrayList<Double> getPriceHistory() {
         return priceHistory;
+    }
+
+    public void setPriceHistory(ArrayList<Double> priceHistory) {
+        if (priceHistory != null) {
+            this.priceHistory = new ArrayList<>(priceHistory);
+        }
     }
 
     public void displayInfo() {

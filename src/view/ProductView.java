@@ -2,6 +2,7 @@ package view;
 
 import manager.ProductManager;
 import model.Product;
+import java.util.List;
 
 public class ProductView {
     private final ProductManager productManager;
@@ -22,25 +23,44 @@ public class ProductView {
             System.out.println("0. Back");
             choice = InputHelper.readInt("Choose: ");
 
-            switch (choice) {
-                case 1:
-                    addProduct();
-                    break;
-                case 2:
-                    updateProduct();
-                    break;
-                case 3:
-                    removeProduct();
-                    break;
-                case 4:
-                    productManager.displayAll();
-                    break;
-                case 5:
-                    String keyword = InputHelper.readLine("Enter Keyword: ");
-                    productManager.searchProduct(keyword);
-                    break;
-                default:
-                    break;
+            try {
+                switch (choice) {
+                    case 1:
+                        addProduct();
+                        break;
+                    case 2:
+                        updateProduct();
+                        break;
+                    case 3:
+                        removeProduct();
+                        break;
+                    case 4:
+                        System.out.printf("%-8s %-20s %-15s %10s %8s%n", "ID", "Name", "Category", "Price", "Stock");
+                        for (Product product : productManager.getAllProducts()) {
+                            product.displayInfo();
+                        }
+                        break;
+                    case 5:
+                        String keyword = InputHelper.readLine("Enter Keyword: ");
+                        List<Product> searchResults = productManager.searchProduct(keyword);
+                        if (searchResults.isEmpty()) {
+                            System.out.println("Product not found");
+                        } else {
+                            for (Product p : searchResults) {
+                                System.out.println("ID: " + p.getProductId());
+                                System.out.println("Name: " + p.getProductName());
+                                System.out.println("Category: " + p.getCategory());
+                                System.out.println("Price: " + p.getPrice());
+                                System.out.println("Stock Quantity: " + p.getStockQuantity());
+                                System.out.println("-----------------");
+                            }
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            } catch (IllegalArgumentException | IllegalStateException e) {
+                System.out.println("Error: " + e.getMessage());
             }
         } while (choice != 0);
     }

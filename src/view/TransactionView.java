@@ -33,35 +33,39 @@ public class TransactionView {
             System.out.println("0. Back");
             choice = InputHelper.readInt("Choose: ");
 
-            switch (choice) {
-                case 1:
-                    createInStoreTransaction();
-                    break;
-                case 2:
-                    createOnlineTransaction();
-                    break;
-                case 3:
-                    addProductToTransaction();
-                    break;
-                case 4:
-                    updateTransactionQuantity();
-                    break;
-                case 5:
-                    removeProductFromTransaction();
-                    break;
-                case 6:
-                    transactionManager.confirmTransaction(InputHelper.readLine("Transaction ID: "));
-                    System.out.println("Transaction confirmed.");
-                    break;
-                case 7:
-                    transactionManager.cancelTransaction(InputHelper.readLine("Transaction ID: "));
-                    System.out.println("Transaction cancelled.");
-                    break;
-                case 8:
-                    transactionManager.displayHistory();
-                    break;
-                default:
-                    break;
+            try {
+                switch (choice) {
+                    case 1:
+                        createInStoreTransaction();
+                        break;
+                    case 2:
+                        createOnlineTransaction();
+                        break;
+                    case 3:
+                        addProductToTransaction();
+                        break;
+                    case 4:
+                        updateTransactionQuantity();
+                        break;
+                    case 5:
+                        removeProductFromTransaction();
+                        break;
+                    case 6:
+                        transactionManager.confirmTransaction(InputHelper.readLine("Transaction ID: "));
+                        System.out.println("Transaction confirmed.");
+                        break;
+                    case 7:
+                        transactionManager.cancelTransaction(InputHelper.readLine("Transaction ID: "));
+                        System.out.println("Transaction cancelled.");
+                        break;
+                    case 8:
+                        transactionManager.displayHistory();
+                        break;
+                    default:
+                        break;
+                }
+            } catch (IllegalArgumentException | IllegalStateException e) {
+                System.out.println("Error: " + e.getMessage());
             }
         } while (choice != 0);
     }

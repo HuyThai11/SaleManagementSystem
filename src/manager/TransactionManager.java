@@ -1,9 +1,9 @@
 package manager;
 
-
 import model.Customer;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import model.Product;
 import model.Transaction;
@@ -11,17 +11,31 @@ import model.TransactionItem;
 import model.InStoreTransaction;
 import model.OnlineTransaction;
 import model.VIPCustomer;
+import java.util.function.Consumer;
 
 public class TransactionManager {
-    private final ArrayList<Transaction> transactions;
+    private final LinkedHashMap<String, Transaction> transactions;
+    private Consumer<Transaction> onDataChanged;
 
     public TransactionManager() {
-        transactions = new ArrayList<>();
+        transactions = new LinkedHashMap<>();
     }
 
-    public void setTransactions(java.util.List<Transaction> newTransactions) {
+    public void setOnDataChanged(Consumer<Transaction> callback) {
+        this.onDataChanged = callback;
+    }
+
+    private void notifyDataChanged(Transaction transaction) {
+        if (onDataChanged != null && transaction != null) {
+            onDataChanged.accept(transaction);
+        }
+    }
+
+    public void setTransactions(List<Transaction> newTransactions) {
         this.transactions.clear();
-        this.transactions.addAll(newTransactions);
+        for (Transaction t : newTransactions) {
+            this.transactions.put(t.getTransactionId().toUpperCase(), t);
+        }
     }
 
     public InStoreTransaction createInStoreTransaction(String id, Customer customer, String date) {
@@ -29,7 +43,8 @@ public class TransactionManager {
             throw new IllegalArgumentException("Transaction ID already exists.");
         }
         InStoreTransaction transaction = new InStoreTransaction(id, customer, date);
-        transactions.add(transaction);
+        transactions.put(id.toUpperCase(), transaction);
+        notifyDataChanged(transaction);
         return transaction;
     }
 
@@ -38,7 +53,8 @@ public class TransactionManager {
             throw new IllegalArgumentException("Transaction ID already exists.");
         }
         InStoreTransaction transaction = new InStoreTransaction(id, customer, date, discountRate, approvedBy);
-        transactions.add(transaction);
+        transactions.put(id.toUpperCase(), transaction);
+        notifyDataChanged(transaction);
         return transaction;
     }
 
@@ -47,7 +63,8 @@ public class TransactionManager {
             throw new IllegalArgumentException("Transaction ID already exists.");
         }
         OnlineTransaction transaction = new OnlineTransaction(id, customer, date, shippingAddress);
-        transactions.add(transaction);
+        transactions.put(id.toUpperCase(), transaction);
+        notifyDataChanged(transaction);
         return transaction;
     }
 
@@ -56,17 +73,14 @@ public class TransactionManager {
             throw new IllegalArgumentException("Transaction ID already exists.");
         }
         OnlineTransaction transaction = new OnlineTransaction(id, customer, date, shippingAddress, shippingFee);
-        transactions.add(transaction);
+        transactions.put(id.toUpperCase(), transaction);
+        notifyDataChanged(transaction);
         return transaction;
     }
 
     public Transaction findById(String id) {
-        for (Transaction transaction : transactions) {
-            if (transaction.getTransactionId().equalsIgnoreCase(id)) {
-                return transaction;
-            }
-        }
-        return null;
+        if (id == null) return null;
+        return transactions.get(id.toUpperCase());
     }
 
     public void confirmTransaction(String id) {
@@ -83,6 +97,7 @@ public class TransactionManager {
             int confirmedCount = countConfirmedTransactions(vipCustomer);
             vipCustomer.updateTier(confirmedCount);
         }
+        notifyDataChanged(transaction);
     }
 
     public void cancelTransaction(String id) {
@@ -91,32 +106,25 @@ public class TransactionManager {
             throw new IllegalArgumentException("Transaction not found.");
         }
         transaction.cancel();
+        notifyDataChanged(transaction);
     }
     
-    public void updateTransaction(
-        String transactionId,
-        String productId,
-        int quantity) {
-
-    Transaction transaction = findById(transactionId);
-
-    if(transaction == null){
-        throw new IllegalArgumentException(
-                "Transaction not found.");
-    }
-
-    transaction.updateQuantity(
-            productId,
-            quantity);
+    public void updateTransaction(String transactionId, String productId, int quantity) {
+        Transaction transaction = findById(transactionId);
+        if (transaction == null) {
+            throw new IllegalArgumentException("Transaction not found.");
+        }
+        transaction.updateQuantity(productId, quantity);
+        notifyDataChanged(transaction);
     }
     
     public ArrayList<Transaction> getTransactionList() {
-        return transactions;
+        return new ArrayList<>(transactions.values());
     }
 
     public double calculateRevenue() {
         double revenue = 0;
-        for (Transaction t : transactions) {
+        for (Transaction t : transactions.values()) {
             if (t.isConfirmed()) {
                 revenue += t.calculateTotal();
             }
@@ -129,7 +137,7 @@ public class TransactionManager {
             return 0;
         }
         int count = 0;
-        for (Transaction transaction : transactions) {
+        for (Transaction transaction : transactions.values()) {
             if (transaction.isConfirmed() && transaction.getCustomer().getId().equalsIgnoreCase(customer.getId())) {
                 count++;
             }
@@ -142,15 +150,15 @@ public class TransactionManager {
             System.out.println("No transaction yet.");
             return;
         }
-        for (Transaction transaction : transactions) {
+        for (Transaction transaction : transactions.values()) {
             transaction.displayInfo();
             System.out.println("----------------------------------------");
         }
     }
    
     public Map<Product, Integer> getBestSellingProducts() {
-        Map<Product, Integer> result = new HashMap<>();
-        for (Transaction transaction : transactions) {
+        Map<Product, Integer> result = new java.util.HashMap<>();
+        for (Transaction transaction : transactions.values()) {
             if (!transaction.isConfirmed()) {
                 continue;
             }
@@ -164,8 +172,8 @@ public class TransactionManager {
     }
     
     public Map<Customer, Double> getTopCustomers() {
-        Map<Customer, Double> result = new HashMap<>();
-        for (Transaction transaction : transactions) {
+        Map<Customer, Double> result = new java.util.HashMap<>();
+        for (Transaction transaction : transactions.values()) {
             if (!transaction.isConfirmed()) {
                 continue;
             }

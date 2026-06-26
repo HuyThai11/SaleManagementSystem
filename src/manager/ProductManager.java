@@ -1,64 +1,68 @@
-
 package manager;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.function.Consumer;
 import model.Product;
 
 public class ProductManager {
-    private final ArrayList<Product> products;
+    private final LinkedHashMap<String, Product> products;
+    private Consumer<Product> onDataChanged;
 
     public ProductManager() {
-        products = new ArrayList<>();
+        products = new LinkedHashMap<>();
     }
 
-    public void setProducts(java.util.List<Product> newProducts) {
+    public void setProducts(List<Product> newProducts) {
         this.products.clear();
-        this.products.addAll(newProducts);
-    }
-    public void addProduct(Product product) {
-        for (Product existingProduct : products) {
-            if (existingProduct.getProductId().equalsIgnoreCase(product.getProductId()) && existingProduct.isActive()) {
-                throw new IllegalArgumentException("Product ID already exists and is active.");
-            }
+        for (Product p : newProducts) {
+            this.products.put(p.getProductId().toUpperCase(), p);
         }
-        products.add(product);
+    }
+
+    public void setOnDataChanged(Consumer<Product> callback) {
+        this.onDataChanged = callback;
+    }
+
+    private void notifyDataChanged(Product product) {
+        if (onDataChanged != null && product != null) {
+            onDataChanged.accept(product);
+        }
+    }
+
+    public void addProduct(Product product) {
+        Product existingProduct = findById(product.getProductId());
+        if (existingProduct != null && existingProduct.isActive()) {
+            throw new IllegalArgumentException("Product ID already exists and is active.");
+        }
+        products.put(product.getProductId().toUpperCase(), product);
+        notifyDataChanged(product);
     }
 
     public Product findById(String productId) {
-        for (Product product : products) {
-            if (product.getProductId().equalsIgnoreCase(productId)) {
-                return product;
-            }
-        }
-        return null;
+        if (productId == null) return null;
+        return products.get(productId.toUpperCase());
     }
-// searchProduct
-    public void searchProduct(String keyword) {
 
-        boolean found = false;
-
-        for (Product product : products) {
-
+    public List<Product> searchProduct(String keyword) {
+        List<Product> result = new ArrayList<>();
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return result;
+        }
+        String lowerKeyword = keyword.toLowerCase();
+        for (Product product : products.values()) {
+            if (!product.isActive()) continue;
+            
             if (product.getProductId().equalsIgnoreCase(keyword)
-                    || product.getProductName().toLowerCase()
-                    .contains(keyword.toLowerCase())
-                    || product.getCategory().toLowerCase().contains(keyword.toLowerCase())) {
-
-                System.out.println("ID: " + product.getProductId());
-                System.out.println("Name: " + product.getProductName());
-                System.out.println("Category: " + product.getCategory());
-                System.out.println("Price: " + product.getPrice());
-                System.out.println("Stock Quantity: "
-                        + product.getStockQuantity());
-
-                found = true;
+                    || product.getProductName().toLowerCase().contains(lowerKeyword)
+                    || product.getCategory().toLowerCase().contains(lowerKeyword)) {
+                result.add(product);
             }
         }
-
-        if (!found) {
-            System.out.println("Product not found");
-        }
+        return result;
     }
+
     public void updateProduct(String id, String name, String category, double price, int stock) {
         Product product = findById(id);
         if (product == null) {
@@ -68,6 +72,7 @@ public class ProductManager {
         product.setCategory(category);
         product.setPrice(price);
         product.setStockQuantity(stock);
+        notifyDataChanged(product);
     }
 
     public boolean removeProduct(String id) {
@@ -76,6 +81,7 @@ public class ProductManager {
             return false;
         }
         product.deactivate();
+        notifyDataChanged(product);
         return true;
     }
 
@@ -93,11 +99,12 @@ public class ProductManager {
             throw new IllegalArgumentException("Product not found.");
         }
         product.setStockQuantity(newStock);
+        notifyDataChanged(product);
     }
 
     public ArrayList<Product> getActiveProducts() {
         ArrayList<Product> activeProducts = new ArrayList<>();
-        for (Product product : products) {
+        for (Product product : products.values()) {
             if (product.isActive()) {
                 activeProducts.add(product);
             }
@@ -107,7 +114,7 @@ public class ProductManager {
 
     public ArrayList<Product> getInactiveProducts() {
         ArrayList<Product> inactiveProducts = new ArrayList<>();
-        for (Product product : products) {
+        for (Product product : products.values()) {
             if (!product.isActive()) {
                 inactiveProducts.add(product);
             }
@@ -117,7 +124,7 @@ public class ProductManager {
 
     public ArrayList<Product> getLowStockProducts() {
         ArrayList<Product> lowStockProducts = new ArrayList<>();
-        for (Product product : products) {
+        for (Product product : products.values()) {
             if (product.isActive() && product.isLowStock()) {
                 lowStockProducts.add(product);
             }
@@ -125,15 +132,7 @@ public class ProductManager {
         return lowStockProducts;
     }
 
-   
-    public void displayAll() {
-        System.out.printf("%-8s %-20s %-15s %10s %8s%n", "ID", "Name", "Category", "Price", "Stock");
-        for (Product product : products) {
-            product.displayInfo();
-        }
-    }
-
     public ArrayList<Product> getAllProducts() {
-        return products;
+        return new ArrayList<>(products.values());
     }
 }

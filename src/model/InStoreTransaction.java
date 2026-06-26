@@ -43,7 +43,9 @@ public class InStoreTransaction extends Transaction {
     @Override
     public double calculateTotal() {
         double subtotal = calculateSubTotal();
-        return subtotal - (subtotal * discountRate);
+        double vipDiscountAmount = getCustomer().calculateDiscount(subtotal);
+        double afterVip = subtotal - vipDiscountAmount;
+        return afterVip - (afterVip * discountRate);
     }
 
     @Override
@@ -57,11 +59,18 @@ public class InStoreTransaction extends Transaction {
         for (TransactionItem item : getItems()) {
             item.displayInfo();
         }
-        System.out.printf("Subtotal: %.0f%n", calculateSubTotal());
+        double subtotal = calculateSubTotal();
+        System.out.printf("Subtotal: %.0f%n", subtotal);
+        
+        double vipDiscount = getCustomer().calculateDiscount(subtotal);
+        if (vipDiscount > 0) {
+            System.out.printf("VIP Discount (%s): -%.0f%n", getCustomer().getCustomerType(), vipDiscount);
+        }
+
         if (discountRate > 0) {
-            System.out.printf("Discount: %.0f%% (Approved by: %s)%n", discountRate * 100, approvedBy);
+            System.out.printf("Manual Discount: %.0f%% (Approved by: %s)%n", discountRate * 100, approvedBy);
         } else {
-            System.out.println("Discount: None");
+            System.out.println("Manual Discount: None");
         }
         System.out.printf("Total: %.0f%n", calculateTotal());
     }

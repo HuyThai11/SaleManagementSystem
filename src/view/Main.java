@@ -25,6 +25,12 @@ public class Main {
         transactionFileHandler = new TransactionFileHandler(productManager, customerManager);
         transactionManager.setTransactions(transactionFileHandler.loadTransactions());
 
+        // Register Auto-Save callbacks using Append-Only for O(1) performance
+        productManager.setOnDataChanged((product) -> productFileHandler.appendProduct(product));
+        customerManager.setOnDataChanged((customer) -> customerFileHandler.appendCustomer(customer));
+        // Transactions still use full save to maintain item integrity
+        transactionManager.setOnDataChanged((transaction) -> transactionFileHandler.saveTransactions(transactionManager.getTransactionList()));
+
         ReportService reportService = new ReportService(customerManager, productManager, transactionManager);
         // addSampleData(); // Disabled for actual data persistence
 
@@ -62,8 +68,8 @@ public class Main {
                         System.out.println("Invalid choice.");
                         break;
                 }
-            } catch (IllegalArgumentException | IllegalStateException e) {
-                System.out.println("Error: " + e.getMessage());
+            } catch (Exception e) {
+                System.out.println("Unexpected Error: " + e.getMessage());
             }
         } while (choice != 5);
     }

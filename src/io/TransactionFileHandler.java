@@ -13,14 +13,18 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import manager.CustomerManager;
 import manager.ProductManager;
+import manager.CustomerManager;
 import model.Customer;
 import model.InStoreTransaction;
 import model.OnlineTransaction;
 import model.Product;
 import model.Transaction;
 import model.TransactionItem;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.nio.file.StandardOpenOption;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class TransactionFileHandler {
 
@@ -32,6 +36,7 @@ public class TransactionFileHandler {
 
     private final ProductManager productManager;
     private final CustomerManager customerManager;
+    private final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
 
     public TransactionFileHandler(ProductManager productManager, CustomerManager customerManager) {
         if (productManager == null || customerManager == null) {
@@ -67,9 +72,14 @@ public class TransactionFileHandler {
         }
 
         boolean success = true;
+        rwLock.writeLock().lock();
 
         // Save Headers
-        try (BufferedWriter writer = new BufferedWriter(new java.io.OutputStreamWriter(new java.io.FileOutputStream(TRANSACTIONS_FILE, false), StandardCharsets.UTF_8))) {
+        try (FileChannel transChannel = FileChannel.open(Paths.get(TRANSACTIONS_FILE), StandardOpenOption.WRITE, StandardOpenOption.CREATE);
+             FileLock transLock = transChannel.lock();
+             BufferedWriter writer = new BufferedWriter(java.nio.channels.Channels.newWriter(transChannel, StandardCharsets.UTF_8.name()))) {
+            
+            transChannel.truncate(0);
             writer.write(HEADER_TRANSACTIONS);
             writer.newLine();
 
@@ -107,7 +117,11 @@ public class TransactionFileHandler {
         }
 
         // Save Items
-        try (BufferedWriter writer = new BufferedWriter(new java.io.OutputStreamWriter(new java.io.FileOutputStream(ITEMS_FILE, false), StandardCharsets.UTF_8))) {
+        try (FileChannel itemsChannel = FileChannel.open(Paths.get(ITEMS_FILE), StandardOpenOption.WRITE, StandardOpenOption.CREATE);
+             FileLock itemsLock = itemsChannel.lock();
+             BufferedWriter writer = new BufferedWriter(java.nio.channels.Channels.newWriter(itemsChannel, StandardCharsets.UTF_8.name()))) {
+            
+            itemsChannel.truncate(0);
             writer.write(HEADER_ITEMS);
             writer.newLine();
 
@@ -123,8 +137,9 @@ public class TransactionFileHandler {
         } catch (IOException e) {
             System.err.println("Error saving transaction items: " + e.getMessage());
             success = false;
+        } finally {
+            rwLock.writeLock().unlock();
         }
-
         return success;
     }
 
@@ -132,30 +147,48 @@ public class TransactionFileHandler {
         List<Transaction> transactions = new ArrayList<>();
         Set<String> loadedIds = new HashSet<>();
 
-        // 1. Load Headers
-        File transFile = new File(TRANSACTIONS_FILE);
-        if (transFile.exists() && transFile.length() > 0) {
-            try (BufferedReader reader = new BufferedReader(new java.io.InputStreamReader(new java.io.FileInputStream(TRANSACTIONS_FILE), StandardCharsets.UTF_8))) {
-                String line;
-                int lineNumber = 0;
-                while ((line = reader.readLine()) != null) {
-                    lineNumber++;
-                    line = line.trim();
-                    if (line.isEmpty() || line.startsWith("#")) continue;
+        rwLock.readLock().lock();
+        try {
+            // 1. Load Headers
+            File transFile = new File(TRANSACTIONS_FILE);
+            if (transFile.exists() && transFile.length() > 0) {
+                try (FileChannel transChannel = FileChannel.open(Paths.get(TRANSACTIONS_FILE), StandardOpenOption.READ);
+                     FileLock lock = transChannel.lock(0L, Long.MAX_VALUE, true);
+                     BufferedReader reader = new BufferedReader(java.nio.channels.Channels.newReader(transChannel, StandardCharsets.UTF_8.name()))) {
+                    String line;
+                    int lineNumber = 0;
+                    while ((line = reader.readLine()) != null) {
+                        lineNumber++;
+                        line = line.trim();
+                        if (line.isEmpty() || line.startsWith("#")) continue;
 
-                    Transaction parsedTx = parseTransaction(line, lineNumber, loadedIds);
-                    if (parsedTx != null) {
-                        transactions.add(parsedTx);
-                        loadedIds.add(parsedTx.getTransactionId().toUpperCase());
+                        Transaction parsedTx = parseTransaction(line, lineNumber, loadedIds);
+                        if (parsedTx != null) {
+                            int existingIndex = -1;
+                            for (int i = 0; i < transactions.size(); i++) {
+                                if (transactions.get(i).getTransactionId().equalsIgnoreCase(parsedTx.getTransactionId())) {
+                                    existingIndex = i;
+                                    break;
+                                }
+                            }
+                            if (existingIndex != -1) {
+                                transactions.set(existingIndex, parsedTx);
+                            } else {
+                                transactions.add(parsedTx);
+                            }
+                            loadedIds.add(parsedTx.getTransactionId().toUpperCase());
+                        }
                     }
+                } catch (IOException e) {
+                    System.err.println("Error loading transactions: " + e.getMessage());
                 }
-            } catch (IOException e) {
-                System.err.println("Error loading transactions: " + e.getMessage());
             }
-        }
 
-        // 2. Load Items and attach to Headers
-        loadTransactionItems(transactions);
+            // 2. Load Items and attach to Headers
+            loadTransactionItems(transactions);
+        } finally {
+            rwLock.readLock().unlock();
+        }
 
         return transactions;
     }
@@ -164,7 +197,9 @@ public class TransactionFileHandler {
         File itemsFile = new File(ITEMS_FILE);
         if (!itemsFile.exists() || itemsFile.length() == 0) return;
 
-        try (BufferedReader reader = new BufferedReader(new java.io.InputStreamReader(new java.io.FileInputStream(ITEMS_FILE), StandardCharsets.UTF_8))) {
+        try (FileChannel itemsChannel = FileChannel.open(Paths.get(ITEMS_FILE), StandardOpenOption.READ);
+             FileLock lock = itemsChannel.lock(0L, Long.MAX_VALUE, true);
+             BufferedReader reader = new BufferedReader(java.nio.channels.Channels.newReader(itemsChannel, StandardCharsets.UTF_8.name()))) {
             String line;
             int lineNumber = 0;
             while ((line = reader.readLine()) != null) {
@@ -188,10 +223,8 @@ public class TransactionFileHandler {
         String customerId = tokens[2].trim();
         String date = tokens[3].trim();
         
-        if (loadedIds.contains(id.toUpperCase())) {
-            System.err.println("Warning [Header Line " + lineNumber + "]: Duplicate Transaction ID. Skipping.");
-            return null;
-        }
+        // In append-only log, duplicates indicate an update
+        // We no longer skip them
 
         Customer customer = resolveCustomerReference(customerId, lineNumber);
         if (customer == null) return null;
@@ -260,6 +293,10 @@ public class TransactionFileHandler {
             priceField.setDouble(item, unitPrice);
 
             transaction.getItems().add(item);
+            
+            if (!transaction.isConfirmed() && !transaction.isCancelled()) {
+                product.reserveStock(quantity);
+            }
         } catch (Exception e) {
             System.err.println("Warning [Item Line " + lineNumber + "]: Parse error. Details: " + e.getMessage());
         }

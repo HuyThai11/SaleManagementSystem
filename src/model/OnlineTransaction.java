@@ -44,7 +44,10 @@ public class OnlineTransaction extends Transaction {
 
     @Override
     public double calculateTotal() {
-        return calculateSubTotal() + shippingFee;
+        double subtotal = calculateSubTotal();
+        double vipDiscountAmount = getCustomer().calculateDiscount(subtotal);
+        double afterVip = subtotal - vipDiscountAmount;
+        return afterVip + shippingFee;
     }
 
     @Override
@@ -58,7 +61,14 @@ public class OnlineTransaction extends Transaction {
         for (TransactionItem item : getItems()) {
             item.displayInfo();
         }
-        System.out.printf("Subtotal: %.0f%n", calculateSubTotal());
+        double subtotal = calculateSubTotal();
+        System.out.printf("Subtotal: %.0f%n", subtotal);
+
+        double vipDiscount = getCustomer().calculateDiscount(subtotal);
+        if (vipDiscount > 0) {
+            System.out.printf("VIP Discount (%s): -%.0f%n", getCustomer().getCustomerType(), vipDiscount);
+        }
+
         System.out.println("Shipping Address: " + shippingAddress);
         System.out.printf("Shipping Fee: %.0f%n", shippingFee);
         System.out.printf("Total: %.0f%n", calculateTotal());

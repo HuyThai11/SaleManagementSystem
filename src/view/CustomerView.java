@@ -21,21 +21,25 @@ public class CustomerView {
             System.out.println("0. Back");
             choice = InputHelper.readInt("Choose: ");
 
-            switch (choice) {
-                case 1:
-                    addCustomer();
-                    break;
-                case 2:
-                    updateCustomer();
-                    break;
-                case 3:
-                    removeCustomer();
-                    break;
-                case 4:
-                    customerManager.displayAll();
-                    break;
-                default:
-                    break;
+            try {
+                switch (choice) {
+                    case 1:
+                        addCustomer();
+                        break;
+                    case 2:
+                        updateCustomer();
+                        break;
+                    case 3:
+                        removeCustomer();
+                        break;
+                    case 4:
+                        customerManager.displayAll();
+                        break;
+                    default:
+                        break;
+                }
+            } catch (IllegalArgumentException | IllegalStateException e) {
+                System.out.println("Error: " + e.getMessage());
             }
         } while (choice != 0);
     }
