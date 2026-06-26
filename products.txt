@@ -1,1 +1,3 @@
-#productId|productName|category|price|stockQuantity|active
+#productId|productName|category|price|stockQuantity|active|priceHistory
+C009|Nguyen Van A|SFEKR|111.0|1|true|
+P001|Laptop|Electronics|1500.0|10|true|

@@ -88,8 +88,8 @@ public class CustomerFileHandler {
 
         Path path = Paths.get(FILE_PATH);
         try (FileChannel channel = FileChannel.open(path, StandardOpenOption.WRITE, StandardOpenOption.APPEND, StandardOpenOption.CREATE);
-             FileLock lock = channel.lock();
-             BufferedWriter writer = new BufferedWriter(java.nio.channels.Channels.newWriter(channel, StandardCharsets.UTF_8.name()))) {
+             BufferedWriter writer = new BufferedWriter(java.nio.channels.Channels.newWriter(channel, StandardCharsets.UTF_8.name()));
+             FileLock lock = channel.lock()) {
             
             String customerType;
             String tierStr = "N/A";

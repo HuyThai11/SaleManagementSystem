@@ -50,8 +50,8 @@ public class ProductFileHandler {
         rwLock.writeLock().lock();
         Path path = Paths.get(FILE_PATH);
         try (FileChannel channel = FileChannel.open(path, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
-             FileLock lock = channel.lock();
-             BufferedWriter writer = new BufferedWriter(java.nio.channels.Channels.newWriter(channel, StandardCharsets.UTF_8.name()))) {
+             BufferedWriter writer = new BufferedWriter(java.nio.channels.Channels.newWriter(channel, StandardCharsets.UTF_8.name()));
+             FileLock lock = channel.lock()) {
             
             channel.truncate(0);
             
@@ -97,8 +97,8 @@ public class ProductFileHandler {
         rwLock.writeLock().lock();
         Path path = Paths.get(FILE_PATH);
         try (FileChannel channel = FileChannel.open(path, StandardOpenOption.WRITE, StandardOpenOption.APPEND, StandardOpenOption.CREATE);
-             FileLock lock = channel.lock();
-             BufferedWriter writer = new BufferedWriter(java.nio.channels.Channels.newWriter(channel, StandardCharsets.UTF_8.name()))) {
+             BufferedWriter writer = new BufferedWriter(java.nio.channels.Channels.newWriter(channel, StandardCharsets.UTF_8.name()));
+             FileLock lock = channel.lock()) {
             
             String priceHistoryStr = "";
             if (product.getPriceHistory() != null && !product.getPriceHistory().isEmpty()) {
@@ -141,8 +141,8 @@ public class ProductFileHandler {
         rwLock.readLock().lock();
         Path path = Paths.get(FILE_PATH);
         try (FileChannel channel = FileChannel.open(path, StandardOpenOption.READ);
-             FileLock lock = channel.lock(0L, Long.MAX_VALUE, true);
-             BufferedReader reader = new BufferedReader(java.nio.channels.Channels.newReader(channel, StandardCharsets.UTF_8.name()))) {
+             BufferedReader reader = new BufferedReader(java.nio.channels.Channels.newReader(channel, StandardCharsets.UTF_8.name()));
+             FileLock lock = channel.lock(0L, Long.MAX_VALUE, true)) {
             
             String line;
             int lineNumber = 0;

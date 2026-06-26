@@ -76,8 +76,8 @@ public class TransactionFileHandler {
 
         // Save Headers
         try (FileChannel transChannel = FileChannel.open(Paths.get(TRANSACTIONS_FILE), StandardOpenOption.WRITE, StandardOpenOption.CREATE);
-             FileLock transLock = transChannel.lock();
-             BufferedWriter writer = new BufferedWriter(java.nio.channels.Channels.newWriter(transChannel, StandardCharsets.UTF_8.name()))) {
+             BufferedWriter writer = new BufferedWriter(java.nio.channels.Channels.newWriter(transChannel, StandardCharsets.UTF_8.name()));
+             FileLock transLock = transChannel.lock()) {
             
             transChannel.truncate(0);
             writer.write(HEADER_TRANSACTIONS);
@@ -118,8 +118,8 @@ public class TransactionFileHandler {
 
         // Save Items
         try (FileChannel itemsChannel = FileChannel.open(Paths.get(ITEMS_FILE), StandardOpenOption.WRITE, StandardOpenOption.CREATE);
-             FileLock itemsLock = itemsChannel.lock();
-             BufferedWriter writer = new BufferedWriter(java.nio.channels.Channels.newWriter(itemsChannel, StandardCharsets.UTF_8.name()))) {
+             BufferedWriter writer = new BufferedWriter(java.nio.channels.Channels.newWriter(itemsChannel, StandardCharsets.UTF_8.name()));
+             FileLock itemsLock = itemsChannel.lock()) {
             
             itemsChannel.truncate(0);
             writer.write(HEADER_ITEMS);
@@ -153,8 +153,8 @@ public class TransactionFileHandler {
             File transFile = new File(TRANSACTIONS_FILE);
             if (transFile.exists() && transFile.length() > 0) {
                 try (FileChannel transChannel = FileChannel.open(Paths.get(TRANSACTIONS_FILE), StandardOpenOption.READ);
-                     FileLock lock = transChannel.lock(0L, Long.MAX_VALUE, true);
-                     BufferedReader reader = new BufferedReader(java.nio.channels.Channels.newReader(transChannel, StandardCharsets.UTF_8.name()))) {
+                     BufferedReader reader = new BufferedReader(java.nio.channels.Channels.newReader(transChannel, StandardCharsets.UTF_8.name()));
+                     FileLock lock = transChannel.lock(0L, Long.MAX_VALUE, true)) {
                     String line;
                     int lineNumber = 0;
                     while ((line = reader.readLine()) != null) {
@@ -198,8 +198,8 @@ public class TransactionFileHandler {
         if (!itemsFile.exists() || itemsFile.length() == 0) return;
 
         try (FileChannel itemsChannel = FileChannel.open(Paths.get(ITEMS_FILE), StandardOpenOption.READ);
-             FileLock lock = itemsChannel.lock(0L, Long.MAX_VALUE, true);
-             BufferedReader reader = new BufferedReader(java.nio.channels.Channels.newReader(itemsChannel, StandardCharsets.UTF_8.name()))) {
+             BufferedReader reader = new BufferedReader(java.nio.channels.Channels.newReader(itemsChannel, StandardCharsets.UTF_8.name()));
+             FileLock lock = itemsChannel.lock(0L, Long.MAX_VALUE, true)) {
             String line;
             int lineNumber = 0;
             while ((line = reader.readLine()) != null) {

@@ -1,1 +1,2 @@
-#customerType|customerId|name|phone|address|tier
+#customerType|customerId|name|phone|address|tier|active
+Regular|C009|Nguyen Van A|0901234567|HCM|N/A|true
